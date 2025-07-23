@@ -7,6 +7,8 @@ from aiofiles.os import path as aiopath
 from yt_dlp import YoutubeDL
 from functools import partial
 from time import time
+import subprocess
+import os
 
 from bot import DOWNLOAD_DIR, bot, categories_dict, config_dict, user_data, LOGGER
 from bot.helper.ext_utils.task_manager import task_utils
@@ -22,6 +24,15 @@ from bot.helper.listeners.tasks_listener import MirrorLeechListener
 from bot.helper.ext_utils.help_messages import YT_HELP_MESSAGE
 from bot.helper.ext_utils.bulk_links import extract_bulk_links
 
+def compress_video(input_path: str, output_path: str):
+    subprocess.run([
+        "ffmpeg", "-i", input_path,
+        "-vcodec", "libx264", "-crf", "28",
+        "-preset", "fast",
+        "-acodec", "aac",
+        "-b:a", "128k",
+        output_path
+    ], check=True)
 
 @new_task
 async def select_format(_, query, obj):
@@ -523,8 +534,17 @@ async def _ytdl(client, message, isLeech=False, sameDir=None, bulk=[]):
     playlist = 'entries' in result
     ydl = YoutubeDLHelper(listener)
     await ydl.add_download(link, path, name, qual, playlist, opt)
-    
 
+    # ابحث عن الفيديو بعد التحميل داخل المسار
+    for fname in os.listdir(path):
+        if fname.endswith((".mp4", ".mkv", ".webm")):
+            original = os.path.join(path, fname)
+            compressed = os.path.join(path, f"compressed_{fname}")
+            compress_video(original, compressed)
+            os.remove(original)
+            os.rename(compressed, original)
+            break
+            
 
 async def ytdl(client, message):
     _ytdl(client, message)
