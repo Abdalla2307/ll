@@ -13,10 +13,9 @@ import subprocess
 def compress_video(input_path: str, output_path: str):
     subprocess.run([
         "ffmpeg", "-i", input_path,
-        "-vcodec", "libx264", "-crf", "28",
+        "-vcodec", "libx264", "-b:v", "1.2M",    # Bitrate ثابت لتقليل الحجم بطريقة طبيعية
         "-preset", "fast",
-        "-acodec", "aac",
-        "-b:a", "128k",
+        "-acodec", "aac", "-b:a", "128k",
         output_path
     ], check=True)
 
