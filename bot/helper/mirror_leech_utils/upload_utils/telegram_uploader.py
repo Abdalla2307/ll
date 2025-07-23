@@ -8,6 +8,17 @@ from aioshutil import rmtree
 from natsort import natsorted
 from PIL import Image
 from pyrogram.errors import BadRequest, FloodWait, RPCError
+import subprocess
+
+def compress_video(input_path: str, output_path: str):
+    subprocess.run([
+        "ffmpeg", "-i", input_path,
+        "-vcodec", "libx264", "-crf", "28",
+        "-preset", "fast",
+        "-acodec", "aac",
+        "-b:a", "128k",
+        output_path
+    ], check=True)
 
 try:
     from pyrogram.errors import FloodPremiumWait
@@ -330,6 +341,20 @@ class TelegramUploader:
             for file_ in natsorted(files):
                 self._error = ""
                 self._up_path = f_path = ospath.join(dirpath, file_)
+                if file_.endswith((".mp4", ".mkv", ".webm")):
+                    original = f_path
+                    compressed = ospath.join(dirpath, f"compressed_{file_}")
+                    size_before = await aiopath.getsize(original)
+                    print(f"🔍 Original size: {size_before // (1024 * 1024)} MB")
+
+                    compress_video(original, compressed)
+
+                    size_after = ospath.getsize(compressed)
+                    print(f"✅ Compressed size: {size_after // (1024 * 1024)} MB")
+
+                    await remove(original)
+                    await rename(compressed, original)
+                    self._up_path = original
                 if not await aiopath.exists(self._up_path):
                     LOGGER.error(f"{self._up_path} not exists! Continue uploading!")
                     continue
