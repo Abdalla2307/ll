@@ -7,6 +7,8 @@ from aiofiles.os import path as aiopath
 from yt_dlp import YoutubeDL
 from pyrogram.filters import regex, user
 from pyrogram.handlers import CallbackQueryHandler
+import subprocess
+import os
 
 from .. import DOWNLOAD_DIR, LOGGER, bot_loop, task_dict_lock
 from ..core.config_manager import Config
@@ -30,6 +32,15 @@ from ..helper.telegram_helper.message_utils import (
     send_message,
 )
 
+def compress_video(input_path: str, output_path: str):
+    subprocess.run([
+        "ffmpeg", "-i", input_path,
+        "-vcodec", "libx264", "-crf", "28",
+        "-preset", "fast",
+        "-acodec", "aac",
+        "-b:a", "128k",
+        output_path
+    ], check=True)
 
 @new_task
 async def select_format(_, query, obj):
@@ -513,6 +524,16 @@ class YtDlp(TaskListener):
         ydl = YoutubeDLHelper(self)
         await delete_links(self.message)
         await ydl.add_download(path, qual, playlist, opt)
+
+        # ابحث عن الفيديو بعد التحميل داخل المسار
+        for fname in os.listdir(path):
+            if fname.endswith((".mp4", ".mkv", ".webm")):
+                original = os.path.join(path, fname)
+                compressed = os.path.join(path, f"compressed_{fname}")
+                compress_video(original, compressed)
+                os.remove(original)
+                os.rename(compressed, original)
+                break
 
 
 async def ytdl(client, message):
