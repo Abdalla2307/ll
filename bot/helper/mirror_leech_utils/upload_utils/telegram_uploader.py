@@ -13,11 +13,27 @@ import subprocess
 def compress_video(input_path: str, output_path: str):
     subprocess.run([
         "ffmpeg", "-i", input_path,
-        "-vcodec", "libx264", "-b:v", "1.2M",    # Bitrate ثابت لتقليل الحجم بطريقة طبيعية
+        "-vcodec", "libx264", "-b:v", "1.2M",
         "-preset", "fast",
         "-acodec", "aac", "-b:a", "128k",
         output_path
     ], check=True)
+
+# داخل upload:
+if file_.endswith((".mp4", ".mkv", ".webm")):
+    original = f_path
+    compressed = ospath.join(dirpath, f"compressed_{file_}")
+
+    compress_video(original, compressed)
+
+    if ospath.exists(compressed):
+        try:
+            if ospath.exists(original):
+                await remove(original)
+            await rename(compressed, original)
+            self._up_path = original
+        except Exception as e:
+            print(f"❌ Rename or remove failed: {e}")
 
 try:
     from pyrogram.errors import FloodPremiumWait
