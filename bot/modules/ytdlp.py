@@ -522,9 +522,15 @@ class YtDlp(TaskListener):
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
 
+        # إعداد options لدمج اختيار الجودة مع ضبط bitrate تلقائي
+        opt = opt or {}
+        opt["format"] = f"bestvideo[height={qual}][tbr<=1500]+bestaudio/best[height={qual}][tbr<=1500]"
+
+        options.update(opt)
+
         ydl = YoutubeDLHelper(self)
         await delete_links(self.message)
-        await ydl.add_download(path, qual, playlist, opt)
+        await ydl.add_download(path, qual, playlist, options)
 
         # ابحث عن الفيديو بعد التحميل داخل المسار
         for fname in os.listdir(path):
