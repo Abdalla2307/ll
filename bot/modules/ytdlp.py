@@ -524,9 +524,7 @@ class YtDlp(TaskListener):
 
         # إعداد options لدمج اختيار الجودة مع ضبط bitrate تلقائي
         opt = opt or {}
-        opt["format_sort"] = "res:480,tbr<=1000"
-        opt["format"] = "bv+ba/b"
-
+        opt["format"] = f"bestvideo[height<={qual}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/best[height<={qual}]"
         options.update(opt)
 
         ydl = YoutubeDLHelper(self)
