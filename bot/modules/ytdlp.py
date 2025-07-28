@@ -534,6 +534,10 @@ class YtDlp(TaskListener):
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
 
+        ydl = YoutubeDLHelper(self)
+        await delete_links(self.message)
+        await ydl.add_download(path, qual, playlist, options)
+
 async def ytdl(client, message):
     bot_loop.create_task(YtDlp(client, message).new_event())
 
