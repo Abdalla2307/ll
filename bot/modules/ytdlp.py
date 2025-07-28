@@ -537,7 +537,19 @@ class YtDlp(TaskListener):
 
         options.update(opt)
         options["merge_output_format"] = "mp4"
-        options["postprocessors"] = []
+        options["postprocessors"] = [
+            {
+                "key": "FFmpegVideoConvertor",
+                "preferedformat": "mp4"
+            },
+            {
+                "key": "FFmpegVideoReencoder",
+                "video_codec": "libx264",
+                "crf": "28",
+                "preset": "veryfast"
+            }
+        ]
+
 
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
