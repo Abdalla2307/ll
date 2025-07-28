@@ -514,31 +514,7 @@ class YtDlp(TaskListener):
         playlist = "entries" in result
 
         # إعداد صيغة التحميل: محاولة استخدام نسخة muxed بجودة محددة إن أمكن
-        try:
-                # حاول تحويل qual لرقم (لو المستخدم اختار رقم مباشر)
-                target_height = int(qual)
-
                 muxed_formats = [
-                        f["format_id"] for f in result.get("formats", [])
-                        if f.get("height") == target_height
-                        and f.get("vcodec") != "none"
-                        and f.get("acodec") != "none"
-                        and f.get("format_note") != "DASH"
-                        and f.get("ext") == "mp4"
-                ]
-
-                if muxed_formats:
-                        opt["format"] = muxed_formats[0]
-                else:
-                        opt["format"] = qual  # fallback
-
-        except ValueError:
-                # لو qual مش رقم، استخدمه زي ما هو (ممكن يكون صيغة جاهزة)
-                opt["format"] = qual
-
-        options.update(opt)
-        options["merge_output_format"] = "mp4"
-        options["postprocessors"] = []
 
 async def ytdl(client, message):
     bot_loop.create_task(YtDlp(client, message).new_event())
