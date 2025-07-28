@@ -509,12 +509,30 @@ class YtDlp(TaskListener):
             if qual is None:
                 await self.remove_from_same_dir()
                 return
+        try:
+            target_height = int(qual)
+            found = False
+
+            for f in result.get("formats", []):
+                if f.get("height") == target_height and f.get("vcodec") != "none" and f.get("acodec") != "none" and f.get("ext") == "mp4":
+                    opt["format"] = f["format_id"]
+                    found = True
+                    LOGGER.info(f"[SELECTED FORMAT] - {opt['format']}")
+                    break
+
+            if not found:
+                LOGGER.warning("[WARN] No matching muxed format found for height, falling back.")
+                opt["format"] = qual
+
+        except ValueError:
+            opt["format"] = qual
+
+        options.update(opt)
+        options["merge_output_format"] = "mp4"
+        options["postprocessors"] = []
 
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
-
-        # إعداد صيغة التحميل: محاولة استخدام نسخة muxed بجودة محددة إن أمكن
-                muxed_formats = [
 
 async def ytdl(client, message):
     bot_loop.create_task(YtDlp(client, message).new_event())
