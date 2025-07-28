@@ -513,31 +513,32 @@ class YtDlp(TaskListener):
         LOGGER.info(f"Downloading with YT-DLP: {self.link}")
         playlist = "entries" in result
 
-        # إعداد options لدمج اختيار الجودة مع ضبط bitrate تلقائي
-        # إعداد صيغة التحميل: محاولة تحميل نسخة muxed بالجودة المطلوبة
-        muxed_formats = [
-                f["format_id"] for f in result.get("formats", [])
-                if f.get("height") == int(qual)
-                and f.get("vcodec") != "none"
-                and f.get("acodec") != "none"
-                and f.get("format_note") != "DASH"
-                and f.get("ext") == "mp4"
-        ]
+        # إعداد صيغة التحميل: محاولة استخدام نسخة muxed بجودة محددة إن أمكن
+        try:
+                # حاول تحويل qual لرقم (لو المستخدم اختار رقم مباشر)
+                target_height = int(qual)
 
-        if muxed_formats:
-                opt["format"] = muxed_formats[0]
-        else:
-                opt["format"] = qual  # fallback في حال مش لاقي نسخة muxed بالجودة المطلوبة
+                muxed_formats = [
+                        f["format_id"] for f in result.get("formats", [])
+                        if f.get("height") == target_height
+                        and f.get("vcodec") != "none"
+                        and f.get("acodec") != "none"
+                        and f.get("format_note") != "DASH"
+                        and f.get("ext") == "mp4"
+                ]
+
+                if muxed_formats:
+                        opt["format"] = muxed_formats[0]
+                else:
+                        opt["format"] = qual  # fallback
+
+        except ValueError:
+                # لو qual مش رقم، استخدمه زي ما هو (ممكن يكون صيغة جاهزة)
+                opt["format"] = qual
 
         options.update(opt)
         options["merge_output_format"] = "mp4"
         options["postprocessors"] = []
-
-
-        ydl = YoutubeDLHelper(self)
-        await delete_links(self.message)
-        await ydl.add_download(path, qual, playlist, options)
-
 
 async def ytdl(client, message):
     bot_loop.create_task(YtDlp(client, message).new_event())
