@@ -511,20 +511,28 @@ class YtDlp(TaskListener):
                 return
         try:
             target_height = int(qual)
-            found = False
+            format_str = None
+            min_vbitrate = float("inf")
 
             for f in result.get("formats", []):
-                if f.get("height") == target_height and f.get("vcodec") != "none" and f.get("acodec") != "none" and f.get("ext") == "mp4":
-                    opt["format"] = f["format_id"]
-                    found = True
-                    LOGGER.info(f"[SELECTED FORMAT] - {opt['format']}")
-                    break
+                if (
+                    f.get("height") == target_height
+                    and f.get("vcodec") != "none"
+                    and f.get("acodec") == "none"
+                    and f.get("ext") == "mp4"
+                    and f.get("format_id")
+                    and f.get("tbr") and f.get("tbr") < min_vbitrate
+                ):
+                    format_str = f["format_id"]
+                    min_vbitrate = f["tbr"]
 
-            if not found:
-                LOGGER.warning("[WARN] No matching muxed format found for height, falling back.")
-                opt["format"] = qual
+            if format_str:
+                opt["format"] = f"{format_str}+bestaudio[ext=m4a]"
+                LOGGER.info(f"[SELECTED STREAM FORMAT] - {opt['format']}")
+            else:
+                opt["format"] = qual  # fallback
 
-        except ValueError:
+        except Exception:
             opt["format"] = qual
 
         options.update(opt)
