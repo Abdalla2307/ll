@@ -33,15 +33,6 @@ from ..helper.telegram_helper.message_utils import (
     send_message,
 )
 
-def compress_video(input_path: str, output_path: str):
-    subprocess.run([
-        "ffmpeg", "-i", input_path,
-        "-vcodec", "libx264", "-crf", "28",
-        "-preset", "fast",
-        "-acodec", "aac",
-        "-b:a", "128k",
-        output_path
-    ], check=True)
 
 @new_task
 async def select_format(_, query, obj):
@@ -523,9 +514,9 @@ class YtDlp(TaskListener):
         playlist = "entries" in result
 
         # إعداد options لدمج اختيار الجودة مع ضبط bitrate تلقائي
-        opt = opt or {}
-        opt["format"] = f"bestvideo[height<={qual}][vcodec*=avc1][tbr<=950]+bestaudio[acodec*=mp4a]/best[height<={qual}][tbr<=950]"
-        options.update(opt)
+        opt["format"] = f"best[height={qual}][ext=mp4]/best"
+        options["merge_output_format"] = "mp4"
+        options["postprocessors"] = []
 
         ydl = YoutubeDLHelper(self)
         await delete_links(self.message)
