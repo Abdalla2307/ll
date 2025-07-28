@@ -522,16 +522,6 @@ class YtDlp(TaskListener):
         await delete_links(self.message)
         await ydl.add_download(path, qual, playlist, options)
 
-        # ابحث عن الفيديو بعد التحميل داخل المسار
-        for fname in os.listdir(path):
-            if fname.endswith((".mp4", ".mkv", ".webm")):
-                original = os.path.join(path, fname)
-                compressed = os.path.join(path, f"compressed_{fname}")
-                compress_video(original, compressed)
-                os.remove(original)
-                os.rename(compressed, original)
-                break
-
 
 async def ytdl(client, message):
     bot_loop.create_task(YtDlp(client, message).new_event())
