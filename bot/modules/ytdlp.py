@@ -514,9 +514,25 @@ class YtDlp(TaskListener):
         playlist = "entries" in result
 
         # إعداد options لدمج اختيار الجودة مع ضبط bitrate تلقائي
-        opt["format"] = f"best[height={qual}][ext=mp4]/best"
+        # إعداد صيغة التحميل: محاولة تحميل نسخة muxed بالجودة المطلوبة
+        muxed_formats = [
+                f["format_id"] for f in result.get("formats", [])
+                if f.get("height") == int(qual)
+                and f.get("vcodec") != "none"
+                and f.get("acodec") != "none"
+                and f.get("format_note") != "DASH"
+                and f.get("ext") == "mp4"
+        ]
+
+        if muxed_formats:
+                opt["format"] = muxed_formats[0]
+        else:
+                opt["format"] = qual  # fallback في حال مش لاقي نسخة muxed بالجودة المطلوبة
+
+        options.update(opt)
         options["merge_output_format"] = "mp4"
         options["postprocessors"] = []
+
 
         ydl = YoutubeDLHelper(self)
         await delete_links(self.message)
